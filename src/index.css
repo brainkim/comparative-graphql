@@ -1,0 +1,37 @@
+body {
+  margin: 0;
+  background: #0c1227;
+  font-family: sans-serif;
+}
+
+.app {
+  text-align: center;
+}
+
+.app code {
+  padding: 4px 8px;
+  background: #0b2f5b;
+}
+
+.app p {
+  margin: 0.8rem;
+}
+
+.app-header {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 4vh;
+  color: white;
+}
+
+.app-link {
+  color: white;
+}
+
+.crank-logo {
+  max-height: 30vh;
+  pointer-events: none;
+}
