@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.3.12",
-    "@bikeshaving/crank": "^0.3.6"
+    "@bikeshaving/crank": "^0.3.9"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
