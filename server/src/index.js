@@ -42,27 +42,27 @@ type Query {
 }
 `;
 
-const server = new ApolloServer({
-	typeDefs,
-	resolvers: {
-		Query: {
-			item(_source, {id}, {dataSources: {hackerNewsAPI}}) {
-				return hackerNewsAPI.getItem(id);
-			},
-			async user(_source, {username}, {dataSources: {hackerNewsAPI}}) {
-				const user = await hackerNewsAPI.getUser(username);
-				return user;
-			},
+const resolvers = {
+	Query: {
+		item(_source, {id}, {dataSources: {hackerNewsAPI}}) {
+			return hackerNewsAPI.getItem(id);
 		},
-		User: {
-			submitted(parent, args, {dataSources: {hackerNewsAPI}}) {
-				console.log(args);
-				return Promise.all(parent.submitted.map(async (id) => {
-					return hackerNewsAPI.getItem(id);
-				}));
-			},
+		user(_source, {username}, {dataSources: {hackerNewsAPI}}) {
+			return hackerNewsAPI.getUser(username);
 		},
 	},
+	User: {
+		submitted(parent, {limit}, {dataSources: {hackerNewsAPI}}) {
+			return Promise.all(parent.submitted.slice(0, limit).map(async (id) => {
+				return hackerNewsAPI.getItem(id);
+			}));
+		},
+	},
+};
+
+const server = new ApolloServer({
+	typeDefs,
+	resolvers,
 	dataSources() {
 		return {hackerNewsAPI: new HackerNewsAPI()};
 	},
