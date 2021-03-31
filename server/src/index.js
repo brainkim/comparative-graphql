@@ -1,7 +1,7 @@
 import {gql, ApolloServer} from "apollo-server";
 import {RESTDataSource} from "apollo-datasource-rest";
 
-class HackerNewsAPI extends RESTDataSource {
+class HackerNewsSource extends RESTDataSource {
 	constructor() {
 		super();
 		this.baseURL = "https://hacker-news.firebaseio.com/v0/";
@@ -14,6 +14,18 @@ class HackerNewsAPI extends RESTDataSource {
 	getUser(username) {
 		return this.get(`user/${username}.json`);
 	}
+
+	getTopStories() {
+		return this.get("topstories.json");
+	}
+
+	getNewStories() {
+		return this.get("newstories.json");
+	}
+
+	getBestStories() {
+		return this.get("beststories.json");
+	}
 }
 
 const typeDefs = gql`
@@ -25,133 +37,312 @@ const typeDefs = gql`
 #   "karma" : 2937,
 #   "submitted" : [ ... ]
 # }
-
 type User {
 	id: ID!
 	username: ID!
-	created: Int
-	karma: Int
-	about: String
-	submitted(limit: Int): [Item]!
+	created: Int!
+	karma: Int!
+	about: String!
+	submitted(limit: Int, type: ItemType): [Item]!
+	stories(limit: Int): [Story]!
+	comments(limit: Int): [Comment]!
 }
 
-# {
-#   "by" : "dhouston",
-#   "descendants" : 71,
-#   "id" : 8863,
-#   "kids" : [ 8952, 9224, 8917, 8884, 8887, 8943, 8869, 8958, 9005, 9671, 8940, 9067, 8908, 9055, 8865, 8881, 8872, 8873, 8955, 10403, 8903, 8928, 9125, 8998, 8901, 8902, 8907, 8894, 8878, 8870, 8980, 8934, 8876 ],
-#   "score" : 111,
-#   "time" : 1175714200,
-#   "title" : "My YC app: Dropbox - Throw away your USB drive",
-#   "type" : "story",
-#   "url" : "http://www.getdropbox.com/u/2/screencast.html"
-# }
+enum ItemType {
+	STORY
+	COMMENT
+	ASK
+	JOB
+}
 
-type Item {
+interface Item {
 	id: ID!
-	time: Int
-	# only for stories
-	score: Int
-	type: String
-	text: String
-	by: User
-	title: String
-	url: String
+	type: ItemType!
+	by: User!
+	time: Int!
 }
 
-# {
-#   "by" : "dhouston",
-#   "descendants" : 71,
-#   "id" : 8863,
-#   "kids" : [ 8952, 9224, 8917, 8884, 8887, 8943, 8869, 8958, 9005, 9671, 8940, 9067, 8908, 9055, 8865, 8881, 8872, 8873, 8955, 10403, 8903, 8928, 9125, 8998, 8901, 8902, 8907, 8894, 8878, 8870, 8980, 8934, 8876 ],
-#   "score" : 111,
-#   "time" : 1175714200,
-#   "title" : "My YC app: Dropbox - Throw away your USB drive",
-#   "type" : "story",
-#   "url" : "http://www.getdropbox.com/u/2/screencast.html"
-# }
-
-type Story {
-	by: User
-	descendants: Int
-	id: ID
-	score: Int
-	time: Int
-	title: String
-	url: String
-	#kids: ??????
-}
-
-# {
-#   "by" : "norvig",
-#   "id" : 2921983,
-#   "kids" : [ 2922097, 2922429, 2924562, 2922709, 2922573, 2922140, 2922141 ],
-#   "parent" : 2921506,
-#   "text" : "Aw shucks, guys ... you make me blush with your compliments.<p>Tell you what, Ill make a deal: I'll keep writing if you keep reading. K?",
-#   "time" : 1314211127,
-#   "type" : "comment"
-# }
-
-type Comment {
-	by: User
+interface FeedItem implements Item {
 	id: ID!
-	parent: ID
-	text: String
-	time: Int
+	type: ItemType!
+	by: User!
+	time: Int!
+	title: String!
 }
 
-# {
-#   "by" : "tel",
-#   "descendants" : 16,
-#   "id" : 121003,
-#   "kids" : [ 121016, 121109, 121168 ],
-#   "score" : 25,
-#   "text" : "<i>or</i> HN: the Next Iteration<p>I get the impression that with Arc being released a lot of people who never had time for HN before are suddenly dropping in more often. (PG: what are the numbers on this? I'm envisioning a spike.)<p>Not to say that isn't great, but I'm wary of Diggification. Between links comparing programming to sex and a flurry of gratuitous, ostentatious  adjectives in the headlines it's a bit concerning.<p>80% of the stuff that makes the front page is still pretty awesome, but what's in place to keep the signal/noise ratio high? Does the HN model still work as the community scales? What's in store for (++ HN)?",
-#   "time" : 1203647620,
-#   "title" : "Ask HN: The Arc Effect",
-#   "type" : "story"
-# }
+#{
+#  "by" : "dhouston",
+#  "descendants" : 71,
+#  "id" : 8863,
+#  "kids" : [ 8952, 9224, 8917, 8884, 8887, 8943, 8869, 8958, 9005, 9671, 8940, 9067, 8908, 9055, 8865, 8881, 8872, 8873, 8955, 10403, 8903, 8928, 9125, 8998, 8901, 8902, 8907, 8894, 8878, 8870, 8980, 8934, 8876 ],
+#  "score" : 111,
+#  "time" : 1175714200,
+#  "title" : "My YC app: Dropbox - Throw away your USB drive",
+#  "type" : "story",
+#  "url" : "http://www.getdropbox.com/u/2/screencast.html"
+#}
+type Story implements Item & FeedItem {
+	# ITEM
+	id: ID!
+	type: ItemType!
+	by: User!
+	time: Int!
+	# FEEDITEM
+	title: String!
+	# UNIQUE
+	descendants: Int!
+	score: Int!
+	url: String!
+	kids(limit: Int): [Item]!
+}
 
-type Ask {
-	by: User
+#{
+#  "by" : "tel",
+#  "descendants" : 16,
+#  "id" : 121003,
+#  "kids" : [ 121016, 121109, 121168 ],
+#  "score" : 25,
+#  "text" : "...",
+#  "time" : 1203647620,
+#  "title" : "Ask HN: The Arc Effect",
+#  "type" : "story"
+#}
+type Ask implements Item & FeedItem {
+	# SHARED
+	id: ID!
+	type: ItemType!
+	by: User!
+	time: Int!
+	title: String!
+	# UNIQUE
+	descendants: Int!
+	score: Int!
+	url: String!
+	text: String!
+	kids(limit: Int): [Item]!
+}
+
+#{
+#  "by" : "justin",
+#  "id" : 192327,
+#  "score" : 6,
+#  "text" : "...",
+#  "time" : 1210981217,
+#  "title" : "Justin.tv is looking for a Lead Flash Engineer!",
+#  "type" : "job",
+#  "url" : ""
+#}
+type Job implements Item & FeedItem {
+	# SHARED
+	id: ID!
+	type: ItemType!
+	by: User!
+	time: Int!
+	title: String!
+
+	# UNIQUE
+	score: Int!
+	text: String!
+	url: String!
+}
+
+#{
+#  "by" : "norvig",
+#  "id" : 2921983,
+#  "kids" : [ 2922097, 2922429, 2924562, 2922709, 2922573, 2922140, 2922141 ],
+#  "parent" : 2921506,
+#  "text" : "Aw shucks, guys ... you make me blush with your compliments.<p>Tell you what, Ill make a deal: I'll keep writing if you keep reading. K?",
+#  "time" : 1314211127,
+#  "type" : "comment"
+#}
+type Comment implements Item {
+	# SHARED
+	id: ID!
+	type: ItemType!
+	by: User!
+	time: Int!
+
+	# UNIQUE
+	parent: Item!
+	text: String!
+	kids(limit: Int): [Item]!
 }
 
 type Query {
 	user(id: ID!): User
 	item(id: ID!): Item
 	story(id: ID!): Story
+
+	topStories(limit: Int): [FeedItem]!
+	newStories(limit: Int): [FeedItem]!
+	bestStories(limit: Int): [FeedItem]!
 }
 `;
 
 const resolvers = {
 	Query: {
-		item(_source, {id}, {dataSources: {hackerNewsAPI}}) {
-			return hackerNewsAPI.getItem(id);
+		item(_source, {id}, {dataSources: {hackerNewsSource}}) {
+			return hackerNewsSource.getItem(id);
 		},
-		async story(_source, {id}, {dataSources: {hackerNewsAPI}}) {
-			const item = await hackerNewsAPI.getItem(id);
+
+		async story(_source, {id}, {dataSources: {hackerNewsSource}}) {
+			const item = await hackerNewsSource.getItem(id);
 			if (item && item.type === "story") {
 				return item;
 			}
 		},
-		user(_source, {id}, {dataSources: {hackerNewsAPI}}) {
-			return hackerNewsAPI.getUser(id);
+
+		user(_source, {id}, {dataSources: {hackerNewsSource}}) {
+			return hackerNewsSource.getUser(id);
+		},
+
+		async topStories(_source, {limit}, {dataSources: {hackerNewsSource}}) {
+			let ids = await hackerNewsSource.getTopStories();
+			ids = ids.slice(0, limit);
+			const items = await Promise.all(ids.map((id) => hackerNewsSource.getItem(id)));
+			return items;
+		},
+
+		async newStories(_source, {limit}, {dataSources: {hackerNewsSource}}) {
+			let ids = await hackerNewsSource.getNewStories();
+			ids = ids.slice(0, limit);
+			const items = await Promise.all(ids.map((id) => hackerNewsSource.getItem(id)));
+			return items;
+		},
+
+		async bestStories(_source, {limit}, {dataSources: {hackerNewsSource}}) {
+			let ids = await hackerNewsSource.getBestStories();
+			ids = ids.slice(0, limit);
+			const items = await Promise.all(ids.map((id) => hackerNewsSource.getItem(id)));
+			return items;
 		},
 	},
-	Item: {
-		by(parent) {
-			console.log(parent.by);
-			return hackerNewsAPI.getUser(parent.by);
-		}
-	},
+
 	User: {
 		username(parent) {
 			return parent.id;
 		},
-		submitted(parent, {limit}, {dataSources: {hackerNewsAPI}}) {
-			return Promise.all(parent.submitted.slice(0, limit).map(async (id) => {
-				return hackerNewsAPI.getItem(id);
-			}));
+
+		async submitted(parent, {limit, type}, {dataSources: {hackerNewsSource}}) {
+			const ids = parent.submitted.slice(0, limit);
+			let items = await Promise.all(ids.map((id) =>
+				hackerNewsSource.getItem(id)
+			));
+
+			if (type) {
+				items = items.filter((item) => item.type === type.toLowerCase());
+			}
+
+			return items;
+		},
+
+		async comments(parent, {limit}, {dataSources: {hackerNewsSource}}) {
+			const ids = parent.submitted.slice(0, limit);
+			const items = await Promise.all(ids.map((id) =>
+				hackerNewsSource.getItem(id)
+			));
+
+			return items.filter((item) => item.type === "comment");
+		},
+
+		async stories(parent, {limit}, {dataSources: {hackerNewsSource}}) {
+			const ids = parent.submitted.slice(0, limit);
+			const items = await Promise.all(ids.map((id) =>
+				hackerNewsSource.getItem(id)
+			));
+
+			return items.filter((item) => item.type === "story");
+		}
+	},
+
+	Item: {
+		__resolveType(obj) {
+			switch (obj.type) {
+				case "comment":
+					return "Comment";
+				case "story": {
+					if (obj.text) {
+						return "Ask";
+					} else {
+						return "Story";
+					}
+				}
+				case "job":
+					return "Job";
+				default:
+					throw new Error(`Unknown type ${obj.type}`);
+			}
+		},
+	},
+
+	FeedItem: {
+		__resolveType(obj) {
+			switch (obj.type) {
+				case "comment":
+					return "Comment";
+				case "story": {
+					if (obj.text) {
+						return "Ask";
+					} else {
+						return "Story";
+					}
+				}
+				case "job":
+					return "Job";
+				default:
+					throw new Error(`Unknown type ${obj.type}`);
+			}
+		},
+	},
+
+	Story: {
+		type() {
+			return "STORY";
+		},
+		by(obj) {
+			return hackerNewsSource.getUser(obj.by);
+		},
+		kids(obj, {limit}, {dataSources: {hackerNewsSource}}) {
+			const kids = obj.kids || [];
+			return Promise.all(kids.slice(0, limit).map((id) => hackerNewsSource.getItem(id)));
+		},
+	},
+
+	Comment: {
+		type() {
+			return "COMMENT";
+		},
+		by(obj) {
+			return hackerNewsSource.getUser(obj.by);
+		},
+		parent(obj, {}, {dataSources: {hackerNewsSource}}) {
+			return hackerNewsSource.getItem(obj.parent);
+		},
+		kids(obj, {limit}, {dataSources: {hackerNewsSource}}) {
+			const kids = obj.kids || [];
+			return Promise.all(kids.slice(0, limit).map((id) => hackerNewsSource.getItem(id)));
+		},
+	},
+
+	Ask: {
+		type() {
+			return "ASK";
+		},
+		by(obj) {
+			return hackerNewsSource.getUser(obj.by);
+		},
+		kids(obj, {limit}, {dataSources: {hackerNewsSource}}) {
+			const kids = obj.kids || [];
+			return Promise.all(kids.slice(0, limit).map((id) => hackerNewsSource.getItem(id)));
+		},
+	},
+
+	Job: {
+		type() {
+			return "JOB";
+		},
+		by(obj) {
+			return hackerNewsSource.getUser(obj.by);
 		},
 	},
 };
@@ -160,7 +351,7 @@ const server = new ApolloServer({
 	typeDefs,
 	resolvers,
 	dataSources() {
-		return {hackerNewsAPI: new HackerNewsAPI()};
+		return {hackerNewsSource: new HackerNewsSource()};
 	},
 });
 
