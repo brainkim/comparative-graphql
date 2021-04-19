@@ -42,7 +42,7 @@ type User {
 	username: ID!
 	created: Int!
 	karma: Int!
-	about: String!
+	about: String
 	submitted(limit: Int, type: ItemType): [Item]!
 	stories(limit: Int): [Story]!
 	comments(limit: Int): [Comment]!
@@ -58,14 +58,14 @@ enum ItemType {
 interface Item {
 	id: ID!
 	type: ItemType!
-	by: User!
+	by: User
 	time: Int!
 }
 
 interface FeedItem implements Item {
 	id: ID!
 	type: ItemType!
-	by: User!
+	by: User
 	time: Int!
 	title: String!
 }
@@ -85,7 +85,7 @@ type Story implements Item & FeedItem {
 	# ITEM
 	id: ID!
 	type: ItemType!
-	by: User!
+	by: User
 	time: Int!
 	# FEEDITEM
 	title: String!
@@ -111,14 +111,14 @@ type Ask implements Item & FeedItem {
 	# SHARED
 	id: ID!
 	type: ItemType!
-	by: User!
+	by: User
 	time: Int!
 	title: String!
 	# UNIQUE
 	descendants: Int!
 	score: Int!
 	url: String!
-	text: String!
+	text: String
 	kids(limit: Int): [Item]!
 }
 
@@ -136,13 +136,13 @@ type Job implements Item & FeedItem {
 	# SHARED
 	id: ID!
 	type: ItemType!
-	by: User!
+	by: User
 	time: Int!
 	title: String!
 
 	# UNIQUE
 	score: Int!
-	text: String!
+	text: String
 	url: String!
 }
 
@@ -164,7 +164,7 @@ type Comment implements Item {
 
 	# UNIQUE
 	parent: Item!
-	text: String!
+	text: String
 	kids(limit: Int): [Item]!
 }
 
@@ -179,27 +179,41 @@ type Query {
 }
 `;
 
+function by(parent, _args, {dataSources: {hackerNewsSource}}, info) {
+	const requestedFields = new Set(info.fieldNodes.flatMap(
+		(node) => node.selectionSet.selections.map((field) => field.name.value),
+	));
+	requestedFields.delete("id");
+	requestedFields.delete("username");
+	requestedFields.delete("__typename");
+	if (requestedFields.size) {
+		return hackerNewsSource.getUser(parent.by);
+	}
+	return {id: parent.by || "", username: parent.by || ""};
+}
+
 const resolvers = {
 	Query: {
-		item(_source, {id}, {dataSources: {hackerNewsSource}}) {
+		item(_parent, {id}, {dataSources: {hackerNewsSource}}) {
 			return hackerNewsSource.getItem(id);
 		},
 
-		async story(_source, {id}, {dataSources: {hackerNewsSource}}) {
+		async story(_parent, {id}, {dataSources: {hackerNewsSource}}) {
 			const item = await hackerNewsSource.getItem(id);
 			if (item && item.type === "story") {
 				return item;
 			}
 		},
 
-		user(_source, {id}, {dataSources: {hackerNewsSource}}) {
+		user(_parent, {id}, {dataSources: {hackerNewsSource}}) {
 			return hackerNewsSource.getUser(id);
 		},
 
 		async topStories(_source, {limit}, {dataSources: {hackerNewsSource}}) {
 			let ids = await hackerNewsSource.getTopStories();
 			ids = ids.slice(0, limit);
-			const items = await Promise.all(ids.map((id) => hackerNewsSource.getItem(id)));
+			let items = await Promise.all(ids.map((id) => hackerNewsSource.getItem(id)));
+			items = items.filter((item) => item);
 			return items;
 		},
 
@@ -256,12 +270,12 @@ const resolvers = {
 	},
 
 	Item: {
-		__resolveType(obj) {
-			switch (obj.type) {
+		__resolveType(parent) {
+			switch (parent.type) {
 				case "comment":
 					return "Comment";
 				case "story": {
-					if (obj.text) {
+					if (parent.text) {
 						return "Ask";
 					} else {
 						return "Story";
@@ -270,18 +284,18 @@ const resolvers = {
 				case "job":
 					return "Job";
 				default:
-					throw new Error(`Unknown type ${obj.type}`);
+					throw new Error(`Unknown type ${parent.type}`);
 			}
 		},
 	},
 
 	FeedItem: {
-		__resolveType(obj) {
-			switch (obj.type) {
+		__resolveType(parent) {
+			switch (parent.type) {
 				case "comment":
 					return "Comment";
 				case "story": {
-					if (obj.text) {
+					if (parent.text) {
 						return "Ask";
 					} else {
 						return "Story";
@@ -290,7 +304,7 @@ const resolvers = {
 				case "job":
 					return "Job";
 				default:
-					throw new Error(`Unknown type ${obj.type}`);
+					throw new Error(`Unknown type ${parent.type}`);
 			}
 		},
 	},
@@ -299,12 +313,12 @@ const resolvers = {
 		type() {
 			return "STORY";
 		},
-		by(obj) {
-			return hackerNewsSource.getUser(obj.by);
-		},
-		kids(obj, {limit}, {dataSources: {hackerNewsSource}}) {
-			const kids = obj.kids || [];
-			return Promise.all(kids.slice(0, limit).map((id) => hackerNewsSource.getItem(id)));
+		by,
+		async kids(parent, {limit}, {dataSources: {hackerNewsSource}}) {
+			const kids = parent.kids || [];
+			let results = await Promise.all(kids.slice(0, limit).map((id) => hackerNewsSource.getItem(id)));
+			results = results.filter((result) => !result.deleted);
+			return results;
 		},
 	},
 
@@ -312,14 +326,12 @@ const resolvers = {
 		type() {
 			return "COMMENT";
 		},
-		by(obj) {
-			return hackerNewsSource.getUser(obj.by);
+		by,
+		parent(parent, {}, {dataSources: {hackerNewsSource}}) {
+			return hackerNewsSource.getItem(parent.parent);
 		},
-		parent(obj, {}, {dataSources: {hackerNewsSource}}) {
-			return hackerNewsSource.getItem(obj.parent);
-		},
-		kids(obj, {limit}, {dataSources: {hackerNewsSource}}) {
-			const kids = obj.kids || [];
+		kids(parent, {limit}, {dataSources: {hackerNewsSource}}) {
+			const kids = parent.kids || [];
 			return Promise.all(kids.slice(0, limit).map((id) => hackerNewsSource.getItem(id)));
 		},
 	},
@@ -328,11 +340,9 @@ const resolvers = {
 		type() {
 			return "ASK";
 		},
-		by(obj) {
-			return hackerNewsSource.getUser(obj.by);
-		},
-		kids(obj, {limit}, {dataSources: {hackerNewsSource}}) {
-			const kids = obj.kids || [];
+		by,
+		kids(parent, {limit}, {dataSources: {hackerNewsSource}}) {
+			const kids = parent.kids || [];
 			return Promise.all(kids.slice(0, limit).map((id) => hackerNewsSource.getItem(id)));
 		},
 	},
@@ -341,9 +351,7 @@ const resolvers = {
 		type() {
 			return "JOB";
 		},
-		by(obj) {
-			return hackerNewsSource.getUser(obj.by);
-		},
+		by,
 	},
 };
 
@@ -356,8 +364,5 @@ const server = new ApolloServer({
 });
 
 server.listen().then(() => {
-	console.log(`
-🚀  Server is running!
-🔉  Listening on port 4000
-📭  Query at https://studio.apollographql.com/dev`);
+	console.log("Listening on port 4000");
 });

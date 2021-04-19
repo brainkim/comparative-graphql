@@ -11,4 +11,10 @@ module.exports = {
   installOptions: {
     installTypes: true,
   },
+
+  devOptions: {
+    "open": "none",
+    "hmrErrorOverlay": false,
+    "port": 4001,
+  },
 };
