@@ -9,19 +9,19 @@ import "./index.css";
 const ITEM = gql`
 query Item($id: ID!) {
   item(id: $id) {
+    title
+    author {
+      username
+    }
+    time
     ... on Ask {
-      title
-      time
-      by {
-        username
-      }
-      kids {
+      comments {
         ... CommentFields
         ... on Comment {
-          kids {
+          comments {
             ... CommentFields
             ... on Comment {
-              kids {
+              comments {
                 ... CommentFields
               }
             }
@@ -30,19 +30,14 @@ query Item($id: ID!) {
       }
     }
     ... on Story {
-      title
       url
-      time
-      by {
-        username
-      }
-      kids {
+      comments {
         ... CommentFields
         ... on Comment {
-          kids {
+          comments {
             ... CommentFields
             ... on Comment {
-              kids {
+              comments {
                 ... CommentFields
               }
             }
@@ -57,18 +52,17 @@ fragment CommentFields on Comment {
   id
   text
   time
-  by {
+  author {
     username
   }
-  expanded @client
 }
 `;
 
 const HOMEPAGE = gql`
 query HomePage {
-  topStories(limit: 20) {
+  top(limit: 20) {
     id
-    by {
+    author {
       username
     }
     time
@@ -83,22 +77,7 @@ query HomePage {
 }
 `;
 
-const collapsedCommentsVar = makeVar(new Set());
-
-const cache = new InMemoryCache({
-  typePolicies: {
-    Comment: {
-      fields: {
-        expanded: {
-          read(_, {variables}) {
-            console.log(Date.now(), arguments[0], arguments[1]);
-            return true;
-          },
-        },
-      },
-    },
-  },
-});
+const cache = new InMemoryCache();
 
 const client = new ApolloClient({
   uri: "http://localhost:4000/graphql",
@@ -114,21 +93,11 @@ fragment IsExpanded on Comment {
 
 function* Comment(this: Context, {comment}: any) {
   // TODO: Move this logic to apollo local state?
+  let expanded = true;
   this.addEventListener("click", (ev) => {
     if ((ev.target as Element).className === "expand") {
       ev.stopPropagation();
-      // const collapsedComments = collapsedCommentsVar();
-      // collapsedComments.add(comment.id);
-      // collapsedCommentsVar(collapsedComments);
-      console.log("HELLO?");
-      client.writeFragment({
-        fragment: IS_EXPANDED,
-        data: {
-          id: comment.id,
-          expanded: false,
-        },
-      });
-
+      expanded = !expanded;
       this.refresh();
     }
   });
@@ -137,15 +106,15 @@ function* Comment(this: Context, {comment}: any) {
     yield (
       <div class="comment">
         <p>
-          <button class="expand">{comment.expanded ? "[-]" : "[+]"}</button>{" "}
-          <a href="">{comment.by.username}</a> {comment.time}{" "}
+          <button class="expand">{expanded ? "[-]" : "[+]"}</button>{" "}
+          <a href="">{comment.author.username}</a> {comment.time}{" "}
         </p>
-        <div style={{display: comment.expanded ? null : "none"}}>
+        <div style={{display: expanded ? null : "none"}}>
           <p>
             <Raw value={comment.text} />
           </p>
           <div class="replies">
-            {comment.kids && comment.kids.map((reply: any) => (
+            {comment.comments && comment.comments.map((reply: any) => (
               <Comment crank-key={reply.id} comment={reply} />
             ))}
           </div>
@@ -166,9 +135,9 @@ async function Item({id}: any) {
       </a>
       <p class="domain">{domain}</p>
       <p class="meta">
-        submitted by <a>{item.by && item.by.username}</a> {item.time}
+        submitted by <a>{item.author && item.author.username}</a> {item.time}
       </p>
-      {item.kids && item.kids.map((comment: any) => (
+      {item.comments && item.comments.map((comment: any) => (
         <Comment comment={comment} crank-key={comment.id} />
       ))}
     </div>
@@ -199,7 +168,7 @@ function Pager({page}: any) {
 }
 
 async function List({page, start = 1}: any) {
-  const {data: {topStories: items}} = await client.query({query: HOMEPAGE});
+  const {data: {top: items}} = await client.query({query: HOMEPAGE});
   return (
     <Fragment>
       <Pager page={page} />
