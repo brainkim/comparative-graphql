@@ -2,7 +2,7 @@
 import {createElement, Fragment, Raw} from "@bikeshaving/crank";
 import type {Context} from "@bikeshaving/crank";
 import {renderer} from "@bikeshaving/crank/dom";
-import {ApolloClient, InMemoryCache, gql} from '@apollo/client/core';
+import {ApolloClient, InMemoryCache, gql, makeVar} from '@apollo/client/core';
 import "./index.css";
 
 /*** QUERIES ***/
@@ -16,30 +16,13 @@ query Item($id: ID!) {
         username
       }
       kids {
+        ... CommentFields
         ... on Comment {
-          id
-          text
-          time
-          by {
-            username
-          }
           kids {
+            ... CommentFields
             ... on Comment {
-              id
-              text
-              time
-              by {
-                username
-              }
               kids {
-                ... on Comment {
-                  id
-                  text
-                  time
-                  by {
-                    username
-                  }
-                }
+                ... CommentFields
               }
             }
           }
@@ -54,30 +37,13 @@ query Item($id: ID!) {
         username
       }
       kids {
+        ... CommentFields
         ... on Comment {
-          id
-          text
-          time
-          by {
-            username
-          }
           kids {
+            ... CommentFields
             ... on Comment {
-              id
-              text
-              time
-              by {
-                username
-              }
               kids {
-                ... on Comment {
-                  id
-                  text
-                  time
-                  by {
-                    username
-                  }
-                }
+                ... CommentFields
               }
             }
           }
@@ -85,7 +51,18 @@ query Item($id: ID!) {
       }
     }
   }
-}`;
+}
+
+fragment CommentFields on Comment {
+  id
+  text
+  time
+  by {
+    username
+  }
+  expanded @client
+}
+`;
 
 const HOMEPAGE = gql`
 query HomePage {
@@ -103,32 +80,67 @@ query HomePage {
       descendants
     }
   }
-}`;
+}
+`;
+
+const collapsedCommentsVar = makeVar(new Set());
+
+const cache = new InMemoryCache({
+  typePolicies: {
+    Comment: {
+      fields: {
+        expanded: {
+          read(_, {variables}) {
+            console.log(Date.now(), arguments[0], arguments[1]);
+            return true;
+          },
+        },
+      },
+    },
+  },
+});
 
 const client = new ApolloClient({
   uri: "http://localhost:4000/graphql",
-  cache: new InMemoryCache(),
+  cache,
 });
 
-function* Comment(this: Context) {
+const IS_EXPANDED = gql`
+fragment IsExpanded on Comment {
+  id
+  expanded @client
+}
+`;
+
+function* Comment(this: Context, {comment}: any) {
   // TODO: Move this logic to apollo local state?
-  let expanded = true;
   this.addEventListener("click", (ev) => {
     if ((ev.target as Element).className === "expand") {
-      expanded = !expanded;
-      this.refresh();
       ev.stopPropagation();
+      // const collapsedComments = collapsedCommentsVar();
+      // collapsedComments.add(comment.id);
+      // collapsedCommentsVar(collapsedComments);
+      console.log("HELLO?");
+      client.writeFragment({
+        fragment: IS_EXPANDED,
+        data: {
+          id: comment.id,
+          expanded: false,
+        },
+      });
+
+      this.refresh();
     }
   });
 
-  for (const {comment} of this) {
+  for ({comment} of this) {
     yield (
       <div class="comment">
         <p>
-          <button class="expand">{expanded ? "[-]" : "[+]"}</button>{" "}
+          <button class="expand">{comment.expanded ? "[-]" : "[+]"}</button>{" "}
           <a href="">{comment.by.username}</a> {comment.time}{" "}
         </p>
-        <div style={{display: expanded ? null : "none"}}>
+        <div style={{display: comment.expanded ? null : "none"}}>
           <p>
             <Raw value={comment.text} />
           </p>
