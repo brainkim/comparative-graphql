@@ -1,7 +1,7 @@
 {
-  "name": "castronauts-server-complete",
-  "version": "1.0.0",
-  "description": "back-end demo app for Apollo's lift-off course",
+  "name": "hacker-news-apollo-server",
+  "private": true,
+  "version": "0.0.0",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
@@ -16,7 +16,5 @@
     "dotenv": "^8.2.0",
     "nodemon": "^2.0.4"
   },
-  "author": "Raphael Terrier @R4ph-t",
-  "license": "MIT",
-  "private": true
+  "license": "MIT"
 }

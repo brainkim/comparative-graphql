@@ -1,7 +1,7 @@
 {
+  "name": "hacker-news-apollo-react",
   "private": true,
-  "name": "apollo-client-error-template",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "license": "MIT",
   "dependencies": {
     "@apollo/client": "^3.3.15",
@@ -13,7 +13,7 @@
     "react-scripts": "^4.0.3"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "PORT=4001 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom"
   },

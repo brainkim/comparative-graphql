@@ -16,6 +16,7 @@ query Item($id: ID!) {
   item(id: $id) {
     title
     author {
+      id
       username
     }
     time
@@ -70,6 +71,10 @@ query HomePage {
     time
     title
     type
+    author {
+      id
+      username
+    }
     ... on Story {
       score
       url
@@ -79,13 +84,36 @@ query HomePage {
 }
 `;
 
+function Story({story}) {
+  const domain = story.url;
+  return (
+    <li className="story">
+      <a href={story.url}>{story.title}</a> <span>({domain})</span>
+      <p className="meta">
+        {story.score} points by <a href="">{story.author && story.author.username}</a> | {story.time}{" "}
+        | <a href={`#/item/${story.id}`}>{story.descendants} comments</a>
+      </p>
+    </li>
+  );
+}
 
 
 function App() {
-  const {loading, data, errors} = useQuery(HOMEPAGE);
-  console.log({loading, data, errors});
+  const {data, loading, error} = useQuery(HOMEPAGE);
+  if (loading) {
+    return <div>Loading...</div>;
+  } else if (error) {
+    return <div>Error {error}</div>;
+  }
+
+  console.log(data);
+  const {top: items} = data;
   return (
-    <main>Blegh React huh</main>
+    <ol>
+      {items.map((story) =>
+        <Story story={story} key={story.id} />
+      )}
+    </ol>
   );
 }
 

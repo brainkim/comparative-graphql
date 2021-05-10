@@ -1,6 +1,7 @@
 {
-  "name": "snowpack-app-template-crank-typescript",
-  "version": "0.1.0",
+  "name": "hacker-news-apollo-crank",
+  "private": true,
+  "version": "0.0.0",
   "scripts": {
     "start": "snowpack dev",
     "build": "snowpack build",

@@ -1,8 +1,8 @@
 /** @jsx createElement */
 import {createElement, Fragment, Raw} from "@bikeshaving/crank";
-import type {Context} from "@bikeshaving/crank";
+import type {Child, Context} from "@bikeshaving/crank";
 import {renderer} from "@bikeshaving/crank/dom";
-import {ApolloClient, InMemoryCache, gql, makeVar} from '@apollo/client/core';
+import {ApolloClient, InMemoryCache, gql} from '@apollo/client/core';
 import "./index.css";
 
 /*** QUERIES ***/
@@ -83,13 +83,6 @@ const client = new ApolloClient({
   uri: "http://localhost:4000/graphql",
   cache,
 });
-
-const IS_EXPANDED = gql`
-fragment IsExpanded on Comment {
-  id
-  expanded @client
-}
-`;
 
 function* Comment(this: Context, {comment}: any) {
   // TODO: Move this logic to apollo local state?
@@ -201,7 +194,7 @@ async function Loading({wait = 2000}) {
   return <span>Loading...</span>;
 }
 
-async function* App(this: Context) {
+async function* App(this: Context): AsyncGenerator<Child, any, any> {
   let data: any;
   const onhashchange = (ev?: Event) => {
     const hash = window.location.hash;

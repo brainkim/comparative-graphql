@@ -1,7 +1,7 @@
 {
-  "name": "castronauts-server-complete",
-  "version": "1.0.0",
-  "description": "back-end demo app for Apollo's lift-off course",
+  "name": "hacker-news-graphql-helix",
+  "version": "0.0.0",
+  "description": "Hacker News API via GraphQL",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
@@ -20,7 +20,7 @@
     "dotenv": "^8.2.0",
     "nodemon": "^2.0.4"
   },
-  "author": "Raphael Terrier @R4ph-t",
+  "author": "Brian Kim",
   "license": "MIT",
   "private": true
 }
