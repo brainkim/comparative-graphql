@@ -334,6 +334,7 @@ const schema = makeExecutableSchema({typeDefs, resolvers});
 
 
 import express from "express";
+import cors from "cors";
 import {
   getGraphQLParameters,
   processRequest,
@@ -342,9 +343,8 @@ import {
 } from "graphql-helix";
 
 const app = express();
-
+app.use(cors());
 app.use(express.json());
-
 app.use("/graphql", async (req, res) => {
   // Create a generic Request object that can be consumed by Graphql Helix's API
   const request = {

@@ -10,13 +10,63 @@ import {
 import {ApolloProvider, useQuery} from "@apollo/client/react";
 import "./index.css";
 
-const HOMEPAGE = gql`
-query HomePage {
-  topStories(limit: 20) {
-    id
-    by {
+/*** QUERIES ***/
+const _ITEM = gql`
+query Item($id: ID!) {
+  item(id: $id) {
+    title
+    author {
       username
     }
+    time
+    ... on Ask {
+      comments {
+        ... CommentFields
+        ... on Comment {
+          comments {
+            ... CommentFields
+            ... on Comment {
+              comments {
+                ... CommentFields
+              }
+            }
+          }
+        }
+      }
+    }
+    ... on Story {
+      url
+      comments {
+        ... CommentFields
+        ... on Comment {
+          comments {
+            ... CommentFields
+            ... on Comment {
+              comments {
+                ... CommentFields
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment CommentFields on Comment {
+  id
+  text
+  time
+  author {
+    username
+  }
+}
+`;
+
+const HOMEPAGE = gql`
+query HomePage {
+  top(limit: 20) {
+    id
     time
     title
     type
@@ -28,6 +78,8 @@ query HomePage {
   }
 }
 `;
+
+
 
 function App() {
   const {loading, data, errors} = useQuery(HOMEPAGE);
