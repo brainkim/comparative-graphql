@@ -5,7 +5,7 @@ import {makeExecutableSchema} from '@graphql-tools/schema';
 class HackerNewsSource extends RESTDataSource {
   constructor() {
     super();
-    // TODO: WHY
+    // TODO: WHY???
     this.initialize({});
     this.baseURL = "https://hacker-news.firebaseio.com/v0/";
   }
@@ -222,8 +222,7 @@ const resolvers = {
   },
 
   User: {
-    async username(parent) {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+    username(parent) {
       return parent.id;
     },
 
