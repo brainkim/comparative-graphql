@@ -222,7 +222,8 @@ const resolvers = {
   },
 
   User: {
-    username(parent) {
+    async username(parent) {
+      await new Promise((resolve) => setTimeout(resolve, Math.random() * 2000 + 1000));
       return parent.id;
     },
 

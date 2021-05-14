@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "dependencies": {
-    "@apollo/client": "^3.3.15",
+    "-": "file:../../apollo-client/dist/--0.0.1.tgz",
+    "@apollo/client": "file:../../apollo-client/dist/apollo-client-3.4.0-beta.26.tgz",
+    "and": "file:../../apollo-client/dist/and-0.0.3.tgz",
+    "cd": "file:../../apollo-client/dist/cd-0.3.3.tgz",
     "graphql": "^15.5.0",
     "react": "^16.14.0",
     "react-dom": "^16.14.0"
@@ -13,7 +16,7 @@
     "react-scripts": "^4.0.3"
   },
   "scripts": {
-    "start": "PORT=4001 react-scripts start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom"
   },
