@@ -38,7 +38,7 @@ function App() {
   const {top: items} = data;
   return (
     <ol>
-      {items.map((story, i) => (
+      {items?.map((story, i) => (
         <li key={i}>
           {story.id} {story.title} {story.author ? `${story.author.username} (${story.author.karma})` : null}
         </li>

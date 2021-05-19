@@ -162,10 +162,16 @@ type Comment implements Content {
   hasReplies: Boolean!
 }
 
+type Stub {
+  id: ID!
+  name: String!
+}
+
 type Query {
+  stub: Stub
+
   user(id: ID!): User
   item(id: ID!): Content
-
   top(limit: Int): [Content]!
   new(limit: Int): [Content]!
   best(limit: Int): [Content]!
@@ -218,6 +224,17 @@ const resolvers = {
       let items = await Promise.all(ids.map((id) => hackerNewsSource.getItem(id)));
       items = items.filter((item) => item);
       return items;
+    },
+
+    stub() {
+      return {id: 0};
+    },
+  },
+
+  Stub: {
+    async name() {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return "stubby";
     },
   },
 
