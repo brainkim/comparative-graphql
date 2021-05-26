@@ -12,7 +12,7 @@ import "./index.css";
 
 const HOMEPAGE = gql`
 query HomePage {
-  top(limit: 20) {
+  top(limit: 5) {
     id
     title
     ... on Story @defer {
@@ -30,9 +30,9 @@ function App() {
   const {data, loading, error} = useQuery(HOMEPAGE, {fetchPolicy: 'no-cache'});
   console.log({data, loading, error});
   if (loading) {
-    return <div>Loading...</div>;
+    return <div key="loading">Loading...</div>;
   } else if (error) {
-    return <div>Error: {error.toString()}</div>;
+    return <div key="error">{error.toString()}</div>;
   }
 
   const {top: items} = data;
