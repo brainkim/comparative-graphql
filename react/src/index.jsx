@@ -40,7 +40,11 @@ function App() {
     <ol>
       {items?.map((story, i) => (
         <li key={i}>
-          {story.id} {story.title} {story.author ? `${story.author.username} (${story.author.karma})` : null}
+          <div>{story.id} {story.title}</div>
+          <div>
+            {story.author &&`${story.author.username} (${story.author.karma})`}
+            <br />
+          </div>
         </li>
       ))}
     </ol>

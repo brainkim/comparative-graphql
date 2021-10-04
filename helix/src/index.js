@@ -169,6 +169,7 @@ type Stub {
 
 type Query {
   stub: Stub
+  letters: [String]!
 
   user(id: ID!): User
   item(id: ID!): Content
@@ -228,6 +229,14 @@ const resolvers = {
 
     stub() {
       return {id: 0};
+    },
+
+    async *letters() {
+      const letters = "abc"//"abcdefghijklmnopqrstuvwxyz";
+      for (const letter of letters) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        yield letter;
+      }
     },
   },
 

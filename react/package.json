@@ -4,10 +4,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "dependencies": {
-    "-": "file:../../apollo-client/dist/--0.0.1.tgz",
-    "@apollo/client": "file:../../apollo-client/dist/apollo-client-3.4.0-rc.0.tgz",
-    "and": "file:../../apollo-client/dist/and-0.0.3.tgz",
-    "cd": "file:../../apollo-client/dist/cd-0.3.3.tgz",
+    "@apollo/client": "file:../../apollo-client/dist/apollo-client-3.5.0-beta.18.tgz",
     "graphql": "^15.5.0",
     "react": "^16.14.0",
     "react-dom": "^16.14.0"
